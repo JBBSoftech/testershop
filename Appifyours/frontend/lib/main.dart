@@ -6,6 +6,7 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'config/environment.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:flutter/src/material/carousel.dart' as material;
 
 // Define PriceUtils class
 class PriceUtils {
@@ -68,6 +69,7 @@ class CartItem {
     this.discountPrice = 0.0,
     this.quantity = 1,
     this.image,
+    this.currencySymbol = '\$',
   });
   
   double get effectivePrice => discountPrice > 0 ? discountPrice : price;
@@ -436,7 +438,7 @@ class MyApp extends StatelessWidget {
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
       ),
-      cardTheme: CardThemeData(
+      cardTheme: CardTheme(
         elevation: 4,
         shadowColor: Colors.black12,
         shape: RoundedRectangleBorder(
@@ -527,7 +529,7 @@ class AdminManager {
   static Future<String?> _autoDetectAdminId() async {
     try {
       final response = await http.get(
-        Uri.parse('http://172.20.10.3:5000/api/admin/app-info'),
+        Uri.parse('http://10.27.148.227:5000/api/admin/app-info'),
         headers: {'Content-Type': 'application/json'},
       );
       
@@ -702,7 +704,7 @@ class _SignInPageState extends State<SignInPage> {
     try {
       final adminId = await AdminManager.getCurrentAdminId();
       final response = await http.post(
-        Uri.parse('http://172.20.10.3:5000/api/login'),
+        Uri.parse('http://10.27.148.227:5000/api/login'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'email': _emailController.text.trim(),
