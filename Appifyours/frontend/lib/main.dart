@@ -83,6 +83,11 @@ class CartManager extends ChangeNotifier {
   double _discountPercentage = 0.0; // Default discount percentage
   
   List<CartItem> get items => List.unmodifiable(_items);
+
+   String get displayCurrencySymbol {
+    if (_items.isEmpty) return '$';
+    return _items.first.currencySymbol;
+  }
   
   // Update GST percentage
   void updateGSTPercentage(double percentage) {
