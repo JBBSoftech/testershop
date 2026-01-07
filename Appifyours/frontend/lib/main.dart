@@ -6,12 +6,12 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'config/environment.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-// import 'package:flutter/src/material/carousel.dart' as material;
+import 'package:google_fonts/google_fonts.dart';
 
 // Define PriceUtils class
 class PriceUtils {
   static String formatPrice(double price, {String currency = '\$'}) {
-    return '$currency\${price.toStringAsFixed(2)}';
+    return '$currency${price.toStringAsFixed(2)}';
   }
   
   // Extract numeric value from price string with any currency symbol
@@ -128,11 +128,7 @@ class CartManager extends ChangeNotifier {
     notifyListeners();
   }
   
-  void clearCart() {
-    clear(); // Reuse existing clear method
-  }
-  
-  void clear() {
+  void clearCart() {\n    clear(); // Reuse existing clear method\n  }\n  \n  void clear() {
     _items.clear();
     notifyListeners();
   }
@@ -162,6 +158,9 @@ class CartManager extends ChangeNotifier {
   double get finalTotalWithShipping {
     return PriceUtils.applyShipping(totalWithTax, 5.99); // $5.99 shipping
   }
+
+  // ADDED: Missing totalQuantity getter to fix compilation error
+  int get totalQuantity => _items.fold(0, (sum, item) => sum + item.quantity);
 }
 
 // Wishlist item model
@@ -186,11 +185,7 @@ class WishlistItem {
 }
 
 // Wishlist manager
-class WishlistManager extends ChangeNotifier {
-  void clearWishlist() {
-    clear(); // Reuse existing clear method
-  }
-
+class WishlistManager extends ChangeNotifier {\n  void clearWishlist() {\n    clear(); // Reuse existing clear method\n  }\n
   final List<WishlistItem> _items = [];
   
   List<WishlistItem> get items => List.unmodifiable(_items);
@@ -207,17 +202,42 @@ class WishlistManager extends ChangeNotifier {
     notifyListeners();
   }
   
-  void clearCart() {
-    clear(); // Reuse existing clear method
-  }
-  
-  void clear() {
+  void clearCart() {\n    clear(); // Reuse existing clear method\n  }\n  \n  void clear() {
     _items.clear();
     notifyListeners();
   }
   
   bool isInWishlist(String id) {
     return _items.any((item) => item.id == id);
+  }
+}
+
+// ADDED: Placeholder AuthHelper to fix compilation errors
+class AuthHelper {
+  static Future<bool> isAdmin() async {
+    // Implement actual admin check logic
+    return false;
+  }
+  
+  static Future<bool> isLoggedIn() async {
+    // Implement login check
+    return false;
+  }
+  
+  static Future<String?> getUserEmail() async {
+    return null;
+  }
+  
+  static Future<String?> getUserPhone() async {
+    return null;
+  }
+}
+
+// ADDED: Placeholder ApiService to fix compilation errors
+class ApiService {
+  Future<Map<String, dynamic>> getUserProfile() async {
+    // Implement actual API call
+    return {};
   }
 }
 
@@ -534,7 +554,7 @@ class AdminManager {
   static Future<String?> _autoDetectAdminId() async {
     try {
       final response = await http.get(
-        Uri.parse('http://10.27.148.227:5000/api/admin/app-info'),
+        Uri.parse('${Environment.apiBase}/api/admin/app-info'),
         headers: {'Content-Type': 'application/json'},
       );
       
@@ -709,7 +729,7 @@ class _SignInPageState extends State<SignInPage> {
     try {
       final adminId = await AdminManager.getCurrentAdminId();
       final response = await http.post(
-        Uri.parse('http://10.27.148.227:5000/api/login'),
+        Uri.parse('${Environment.apiBase}/api/login'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'email': _emailController.text.trim(),
@@ -978,7 +998,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed: 2.718281828459045'),
+            content: Text('Failed: ${e.toString().replaceAll('Exception: ', '')}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -1337,13 +1357,13 @@ class _HomePageState extends State<HomePage> {
           width: double.infinity,
           height: height,
           color: backgroundColor,
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical:4),
           child: Container(
             decoration: BoxDecoration(
               color: Colors.transparent,
               borderRadius: BorderRadius.circular(8),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical:4),
             child: Row(
               mainAxisAlignment: textAlign == 'center' ? MainAxisAlignment.center : 
                            textAlign == 'right' ? MainAxisAlignment.end : MainAxisAlignment.start,
@@ -1375,7 +1395,7 @@ class _HomePageState extends State<HomePage> {
                     fontSize: fontSize,
                   ),
                 ),
-                if (textAlign == 'right') const SizedBox(width: 6),
+                if (textAlign == 'right') const SizedBox(width:6),
                 if (textAlign == 'right')
                   (logoAsset.isNotEmpty
                       ? (logoAsset.startsWith('data:image/')
@@ -1701,6 +1721,7 @@ class _HomePageState extends State<HomePage> {
                         Expanded(child: Text(website, style: TextStyle(fontSize: 12, color: textColor))),
                       ],
                     ),
+                    const SizedBox(height: 8),
                   ],
                   const SizedBox(height: 16),
                   const Divider(),
@@ -1783,7 +1804,7 @@ class _HomePageState extends State<HomePage> {
                           return Builder(
                             builder: (BuildContext context) {
                               return Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 5.0),
+                                margin: const EdgeInsets.symmetric(horizontal:5.0),
                                 decoration: BoxDecoration(
                                   color: Colors.grey[300],
                                   borderRadius: BorderRadius.circular(borderRadius),
@@ -1878,7 +1899,7 @@ class _HomePageState extends State<HomePage> {
 
         return Container(
           width: double.infinity,
-          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical:4),
           child: Card(
             elevation: 2,
             color: backgroundColor,
@@ -2097,7 +2118,7 @@ class _HomePageState extends State<HomePage> {
 
   // Quantity management methods
   int _getProductQuantity(String productId) {
-    return _productQuantities[productId] ?? 1;
+    return _productQuantities[productId] ??1;
   }
 
   void _incrementQuantity(String productId) {
@@ -2154,7 +2175,7 @@ class _HomePageState extends State<HomePage> {
     final bool isSoldOut = quantityAvailable <= 0;
     final String discountLabel;
     if (hasPercentDiscount) {
-      discountLabel = '0% OFF';
+      discountLabel = '${badgeDiscountPercent.toStringAsFixed(badgeDiscountPercent % 1 == 0 ? 0 : 1)}% OFF';
     } else {
       discountLabel = 'OFFER';
     }
@@ -2163,7 +2184,7 @@ class _HomePageState extends State<HomePage> {
     if (isSoldOut) {
       stockLabel = 'SOLD OUT';
     } else {
-      stockLabel = 'In stock: 0';
+      stockLabel = 'In stock: $quantityAvailable';
     }
     final bool isInWishlist = _wishlistManager.isInWishlist(productId);
 
@@ -2644,6 +2665,13 @@ class _HomePageState extends State<HomePage> {
         },
       ),
     );
+  }
+
+  void _handleBuyNow() {
+     // Implement buy now logic (e.g., navigate to checkout, show payment dialog)
+     ScaffoldMessenger.of(context).showSnackBar(
+       const SnackBar(content: Text('Proceeding to Checkout...')),
+     );
   }
 
   Widget _buildWishlistPage() {
