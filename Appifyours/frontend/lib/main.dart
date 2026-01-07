@@ -39,6 +39,22 @@ class PriceUtils {
     return '\$'; // Default to dollar
   }
   
+   static String currencySymbolFromCode(String code) {
+    switch (code.toUpperCase()) {
+      case 'INR': return '₹';
+      case 'USD': return '$';
+      case 'EUR': return '€';
+      case 'GBP': return '£';
+      case 'JPY': case 'CNY': return '¥';
+      case 'KRW': return '₩';
+      case 'RUB': return '₽';
+      case 'NGN': return '₦';
+      case 'PKR': return '₨';
+      default: return '$';
+    }
+  }
+}
+
   static double calculateDiscountPrice(double originalPrice, double discountPercentage) {
     return originalPrice * (1 - discountPercentage / 100);
   }
@@ -64,6 +80,7 @@ class CartItem {
   final double discountPrice;
   int quantity;
   final String? image;
+  final String currencySymbol;
   
   CartItem({
     required this.id,
@@ -1137,6 +1154,13 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+ void _handleBuyNow() {
+    if (_cartManager.items.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Your cart is empty')),
+      );
+      return;
+    }
   // Real-time updates removed - app updates dynamically via WebSocket
 
   Future<void> _loadDynamicData() async {
