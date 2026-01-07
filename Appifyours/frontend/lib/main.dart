@@ -3,15 +3,18 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'dart:html' as html;
+import 'dart:js' as js;
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'config/environment.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:google_fonts/google_fonts.dart';
+// import 'package:flutter/src/material/carousel.dart' as material;
 
 // Define PriceUtils class
 class PriceUtils {
-  static String formatPrice(double price, {String currency = '$'}) {
-    return '$currency${price.toStringAsFixed(2)}';
+  static String formatPrice(double price, {String currency = '\$'}) {
+    return '$currency\${price.toStringAsFixed(2)}';
   }
   
   // Extract numeric value from price string with any currency symbol
@@ -25,7 +28,7 @@ class PriceUtils {
   // Detect currency symbol from price string
   static String detectCurrency(String priceString) {
     if (priceString.contains('₹')) return '₹';
-    if (priceString.contains('$')) return '$';
+    if (priceString.contains('\$')) return '\$';
     if (priceString.contains('€')) return '€';
     if (priceString.contains('£')) return '£';
     if (priceString.contains('¥')) return '¥';
@@ -33,7 +36,7 @@ class PriceUtils {
     if (priceString.contains('₽')) return '₽';
     if (priceString.contains('₦')) return '₦';
     if (priceString.contains('₨')) return '₨';
-    return '$'; // Default to dollar
+    return '\$'; // Default to dollar
   }
   
   static double calculateDiscountPrice(double originalPrice, double discountPercentage) {
@@ -61,7 +64,6 @@ class CartItem {
   final double discountPrice;
   int quantity;
   final String? image;
-  final String currencySymbol;
   
   CartItem({
     required this.id,
@@ -70,7 +72,7 @@ class CartItem {
     this.discountPrice = 0.0,
     this.quantity = 1,
     this.image,
-    this.currencySymbol = '$',
+    this.currencySymbol = '\$',
   });
   
   double get effectivePrice => discountPrice > 0 ? discountPrice : price;
@@ -85,7 +87,7 @@ class CartManager extends ChangeNotifier {
   
   List<CartItem> get items => List.unmodifiable(_items);
 
-  String get displayCurrencySymbol {
+   String get displayCurrencySymbol {
     if (_items.isEmpty) return '$';
     return _items.first.currencySymbol;
   }
@@ -130,7 +132,7 @@ class CartManager extends ChangeNotifier {
   }
   
   void clearCart() {
-    clear();
+    clear(); // Reuse existing clear method
   }
   
   void clear() {
@@ -163,9 +165,6 @@ class CartManager extends ChangeNotifier {
   double get finalTotalWithShipping {
     return PriceUtils.applyShipping(totalWithTax, 5.99); // $5.99 shipping
   }
-
-  // ADDED: Missing totalQuantity getter to fix compilation error
-  int get totalQuantity => _items.fold(0, (sum, item) => sum + item.quantity);
 }
 
 // Wishlist item model
@@ -183,7 +182,7 @@ class WishlistItem {
     required this.price,
     this.discountPrice = 0.0,
     this.image,
-    this.currencySymbol = '$',
+    this.currencySymbol = '\$',
   });
   
   double get effectivePrice => discountPrice > 0 ? discountPrice : price;
@@ -191,6 +190,10 @@ class WishlistItem {
 
 // Wishlist manager
 class WishlistManager extends ChangeNotifier {
+  void clearWishlist() {
+    clear(); // Reuse existing clear method
+  }
+
   final List<WishlistItem> _items = [];
   
   List<WishlistItem> get items => List.unmodifiable(_items);
@@ -208,7 +211,7 @@ class WishlistManager extends ChangeNotifier {
   }
   
   void clearCart() {
-    clear();
+    clear(); // Reuse existing clear method
   }
   
   void clear() {
@@ -218,35 +221,6 @@ class WishlistManager extends ChangeNotifier {
   
   bool isInWishlist(String id) {
     return _items.any((item) => item.id == id);
-  }
-}
-
-// ADDED: Placeholder AuthHelper to fix compilation errors
-class AuthHelper {
-  static Future<bool> isAdmin() async {
-    // Implement actual admin check logic
-    return false;
-  }
-  
-  static Future<bool> isLoggedIn() async {
-    // Implement login check
-    return false;
-  }
-  
-  static Future<String?> getUserEmail() async {
-    return null;
-  }
-  
-  static Future<String?> getUserPhone() async {
-    return null;
-  }
-}
-
-// ADDED: Placeholder ApiService to fix compilation errors
-class ApiService {
-  Future<Map<String, dynamic>> getUserProfile() async {
-    // Implement actual API call
-    return {};
   }
 }
 
@@ -563,7 +537,7 @@ class AdminManager {
   static Future<String?> _autoDetectAdminId() async {
     try {
       final response = await http.get(
-        Uri.parse('${Environment.apiBase}/api/admin/app-info'),
+        Uri.parse('http://10.27.148.227:5000/api/admin/app-info'),
         headers: {'Content-Type': 'application/json'},
       );
       
@@ -738,7 +712,7 @@ class _SignInPageState extends State<SignInPage> {
     try {
       final adminId = await AdminManager.getCurrentAdminId();
       final response = await http.post(
-        Uri.parse('${Environment.apiBase}/api/login'),
+        Uri.parse('http://10.27.148.227:5000/api/login'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'email': _emailController.text.trim(),
@@ -1007,7 +981,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed: ${e.toString().replaceAll('Exception: ', '')}'),
+            content: Text('Failed: 2.718281828459045'),
             backgroundColor: Colors.red,
           ),
         );
@@ -1730,7 +1704,6 @@ class _HomePageState extends State<HomePage> {
                         Expanded(child: Text(website, style: TextStyle(fontSize: 12, color: textColor))),
                       ],
                     ),
-                    const SizedBox(height: 8),
                   ],
                   const SizedBox(height: 16),
                   const Divider(),
@@ -1842,10 +1815,10 @@ class _HomePageState extends State<HomePage> {
                                                 child: Icon(Icons.image, size: 40, color: Colors.grey),
                                               ),
                                             ),
+                                    ),
                                   ],
                                 ),
-                              ),
-                          ];
+                              );
                             },
                           );
                         }).toList(),
@@ -1919,13 +1892,13 @@ class _HomePageState extends State<HomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                        title,
-                        style: TextStyle(
-                          fontSize: titleFontSize,
-                          fontWeight: FontWeight.bold,
-                          color: titleColor,
-                        ),
-                      ),
+                    title,
+                    style: TextStyle(
+                      fontSize: titleFontSize,
+                      fontWeight: FontWeight.bold,
+                      color: titleColor,
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   if (productImage != null && productImage.toString().isNotEmpty)
                     ClipRRect(
@@ -2184,7 +2157,7 @@ class _HomePageState extends State<HomePage> {
     final bool isSoldOut = quantityAvailable <= 0;
     final String discountLabel;
     if (hasPercentDiscount) {
-      discountLabel = '${badgeDiscountPercent.toStringAsFixed(badgeDiscountPercent % 1 == 0 ? 0 : 1)}% OFF';
+      discountLabel = '0% OFF';
     } else {
       discountLabel = 'OFFER';
     }
@@ -2474,7 +2447,7 @@ class _HomePageState extends State<HomePage> {
                                     Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
                                     // Show current price (effective price)
                                     Text(
-                                      PriceUtils.formatPrice(item.effectivePrice, currency: item.currencySymbol),
+                                      PriceUtils.formatPrice(item.effectivePrice),
                                       style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
@@ -2484,7 +2457,7 @@ class _HomePageState extends State<HomePage> {
                                     // Show original price if there's a discount
                                     if (item.discountPrice > 0 && item.price != item.discountPrice)
                                       Text(
-                                        PriceUtils.formatPrice(item.price, currency: item.currencySymbol),
+                                        PriceUtils.formatPrice(item.price),
                                         style: TextStyle(
                                           fontSize: 14,
                                           decoration: TextDecoration.lineThrough,
@@ -2571,56 +2544,108 @@ class _HomePageState extends State<HomePage> {
                               ),
                             ],
                           ),
-                        ],
-                      ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
-            },
-          ),
-          if (response.statusCode == 200 && result['success'] == true) {
-            final data = json.decode(response.body);
-            if (data['success'] == true) {
-              final token = data['token']?.toString();
-              final user = data['user'];
-              final userId = (user is Map)
-                  ? (user['_id']?.toString() ?? user['id']?.toString())
-                  : null;
-              if (token != null && token.isNotEmpty && userId != null && userId.isNotEmpty) {
-                await SessionManager.bindAuth(userId: userId, token: token);
-              }
-              if (mounted) {
-                setState(() => _isLoading = false);
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const HomePage()),
-                );
-              }
-            } else {
-              throw Exception(data['error'] ?? 'Sign in failed');
-            }
-          } else {
-            final error = json.decode(response.body);
-            throw Exception(error['error'] ?? 'Invalid credentials');
-          }
-        }
-      } catch (e) {
-        setState(() => _isLoading = false);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Sign in failed: \${e.toString().replaceAll("Exception: ", "")}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    }
-  }
-
-  void _handleBuyNow() {
-    // Implement buy now logic (e.g., navigate to checkout, show payment dialog)
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Proceeding to Checkout...')),
+                // Bill Summary Section
+                Container(
+                  margin: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Bill Summary',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Subtotal', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                            Text(PriceUtils.formatPrice(_cartManager.subtotal, currency: _cartManager.displayCurrencySymbol), style: const TextStyle(fontSize: 14, color: Colors.grey)),
+                          ],
+                        ),
+                      ),
+                      if (_cartManager.totalDiscount > 0)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Discount', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                              Text('-' + PriceUtils.formatPrice(_cartManager.totalDiscount, currency: _cartManager.displayCurrencySymbol), style: const TextStyle(fontSize: 14, color: Colors.green)),
+                            ],
+                          ),
+                        ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('GST (18%)', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                            Text(PriceUtils.formatPrice(_cartManager.gstAmount, currency: _cartManager.displayCurrencySymbol), style: const TextStyle(fontSize: 14, color: Colors.grey)),
+                          ],
+                        ),
+                      ),
+                      const Divider(thickness: 1),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Total', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
+                            Text(PriceUtils.formatPrice(_cartManager.finalTotal, currency: _cartManager.displayCurrencySymbol), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Buy Now Button
+                Container(
+                  margin: const EdgeInsets.all(16),
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Handle buy now action
+                      _handleBuyNow();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 4,
+                    ),
+                    child: const Text(
+                      'Buy Now',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+        },
+      ),
     );
   }
 
@@ -2706,7 +2731,8 @@ class _HomePageState extends State<HomePage> {
                   ),
                 );
               },
-            );
+            ),
+    );
   }
 
   Widget _buildProfilePage() {
@@ -2718,8 +2744,7 @@ class _HomePageState extends State<HomePage> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          children: [
-            Center(
+          children: [            Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -2788,10 +2813,10 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ],
               ),
-            ),
-          ],
+            ),          ],
         ),
-      );
+      ),
+    );
   }
 
   Widget _buildBottomNavigationBar() {
