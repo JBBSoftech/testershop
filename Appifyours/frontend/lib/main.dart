@@ -10,7 +10,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 // Define PriceUtils class
 class PriceUtils {
-  static String formatPrice(double price, {String currency = '\$'}) {
+  static String formatPrice(double price, {String currency = '$'}) {
     return '$currency${price.toStringAsFixed(2)}';
   }
   
@@ -25,7 +25,7 @@ class PriceUtils {
   // Detect currency symbol from price string
   static String detectCurrency(String priceString) {
     if (priceString.contains('₹')) return '₹';
-    if (priceString.contains('\$')) return '\$';
+    if (priceString.contains('$')) return '$';
     if (priceString.contains('€')) return '€';
     if (priceString.contains('£')) return '£';
     if (priceString.contains('¥')) return '¥';
@@ -33,7 +33,7 @@ class PriceUtils {
     if (priceString.contains('₽')) return '₽';
     if (priceString.contains('₦')) return '₦';
     if (priceString.contains('₨')) return '₨';
-    return '\$'; // Default to dollar
+    return '$'; // Default to dollar
   }
   
   static double calculateDiscountPrice(double originalPrice, double discountPercentage) {
@@ -61,6 +61,7 @@ class CartItem {
   final double discountPrice;
   int quantity;
   final String? image;
+  final String currencySymbol;
   
   CartItem({
     required this.id,
@@ -69,7 +70,7 @@ class CartItem {
     this.discountPrice = 0.0,
     this.quantity = 1,
     this.image,
-    this.currencySymbol = '\$',
+    this.currencySymbol = '$',
   });
   
   double get effectivePrice => discountPrice > 0 ? discountPrice : price;
@@ -84,7 +85,7 @@ class CartManager extends ChangeNotifier {
   
   List<CartItem> get items => List.unmodifiable(_items);
 
-   String get displayCurrencySymbol {
+  String get displayCurrencySymbol {
     if (_items.isEmpty) return '$';
     return _items.first.currencySymbol;
   }
@@ -128,7 +129,11 @@ class CartManager extends ChangeNotifier {
     notifyListeners();
   }
   
-  void clearCart() {\n    clear(); // Reuse existing clear method\n  }\n  \n  void clear() {
+  void clearCart() {
+    clear();
+  }
+  
+  void clear() {
     _items.clear();
     notifyListeners();
   }
@@ -178,14 +183,14 @@ class WishlistItem {
     required this.price,
     this.discountPrice = 0.0,
     this.image,
-    this.currencySymbol = '\$',
+    this.currencySymbol = '$',
   });
   
   double get effectivePrice => discountPrice > 0 ? discountPrice : price;
 }
 
 // Wishlist manager
-class WishlistManager extends ChangeNotifier {\n  void clearWishlist() {\n    clear(); // Reuse existing clear method\n  }\n
+class WishlistManager extends ChangeNotifier {
   final List<WishlistItem> _items = [];
   
   List<WishlistItem> get items => List.unmodifiable(_items);
@@ -202,7 +207,11 @@ class WishlistManager extends ChangeNotifier {\n  void clearWishlist() {\n    cl
     notifyListeners();
   }
   
-  void clearCart() {\n    clear(); // Reuse existing clear method\n  }\n  \n  void clear() {
+  void clearCart() {
+    clear();
+  }
+  
+  void clear() {
     _items.clear();
     notifyListeners();
   }
@@ -1357,13 +1366,13 @@ class _HomePageState extends State<HomePage> {
           width: double.infinity,
           height: height,
           color: backgroundColor,
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical:4),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           child: Container(
             decoration: BoxDecoration(
               color: Colors.transparent,
               borderRadius: BorderRadius.circular(8),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical:4),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             child: Row(
               mainAxisAlignment: textAlign == 'center' ? MainAxisAlignment.center : 
                            textAlign == 'right' ? MainAxisAlignment.end : MainAxisAlignment.start,
@@ -1395,7 +1404,7 @@ class _HomePageState extends State<HomePage> {
                     fontSize: fontSize,
                   ),
                 ),
-                if (textAlign == 'right') const SizedBox(width:6),
+                if (textAlign == 'right') const SizedBox(width: 6),
                 if (textAlign == 'right')
                   (logoAsset.isNotEmpty
                       ? (logoAsset.startsWith('data:image/')
@@ -1804,7 +1813,7 @@ class _HomePageState extends State<HomePage> {
                           return Builder(
                             builder: (BuildContext context) {
                               return Container(
-                                margin: const EdgeInsets.symmetric(horizontal:5.0),
+                                margin: const EdgeInsets.symmetric(horizontal: 5.0),
                                 decoration: BoxDecoration(
                                   color: Colors.grey[300],
                                   borderRadius: BorderRadius.circular(borderRadius),
@@ -1833,10 +1842,10 @@ class _HomePageState extends State<HomePage> {
                                                 child: Icon(Icons.image, size: 40, color: Colors.grey),
                                               ),
                                             ),
-                                    ),
                                   ],
                                 ),
-                              );
+                              ),
+                          ];
                             },
                           );
                         }).toList(),
@@ -1899,7 +1908,7 @@ class _HomePageState extends State<HomePage> {
 
         return Container(
           width: double.infinity,
-          margin: const EdgeInsets.symmetric(horizontal: 8, vertical:4),
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           child: Card(
             elevation: 2,
             color: backgroundColor,
@@ -1910,13 +1919,13 @@ class _HomePageState extends State<HomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: titleFontSize,
-                      fontWeight: FontWeight.bold,
-                      color: titleColor,
-                    ),
-                  ),
+                        title,
+                        style: TextStyle(
+                          fontSize: titleFontSize,
+                          fontWeight: FontWeight.bold,
+                          color: titleColor,
+                        ),
+                      ),
                   const SizedBox(height: 12),
                   if (productImage != null && productImage.toString().isNotEmpty)
                     ClipRRect(
@@ -2118,7 +2127,7 @@ class _HomePageState extends State<HomePage> {
 
   // Quantity management methods
   int _getProductQuantity(String productId) {
-    return _productQuantities[productId] ??1;
+    return _productQuantities[productId] ?? 1;
   }
 
   void _incrementQuantity(String productId) {
@@ -2184,7 +2193,7 @@ class _HomePageState extends State<HomePage> {
     if (isSoldOut) {
       stockLabel = 'SOLD OUT';
     } else {
-      stockLabel = 'In stock: $quantityAvailable';
+      stockLabel = 'In stock: 0';
     }
     final bool isInWishlist = _wishlistManager.isInWishlist(productId);
 
@@ -2465,7 +2474,7 @@ class _HomePageState extends State<HomePage> {
                                     Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
                                     // Show current price (effective price)
                                     Text(
-                                      PriceUtils.formatPrice(item.effectivePrice),
+                                      PriceUtils.formatPrice(item.effectivePrice, currency: item.currencySymbol),
                                       style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
@@ -2475,7 +2484,7 @@ class _HomePageState extends State<HomePage> {
                                     // Show original price if there's a discount
                                     if (item.discountPrice > 0 && item.price != item.discountPrice)
                                       Text(
-                                        PriceUtils.formatPrice(item.price),
+                                        PriceUtils.formatPrice(item.price, currency: item.currencySymbol),
                                         style: TextStyle(
                                           fontSize: 14,
                                           decoration: TextDecoration.lineThrough,
@@ -2562,116 +2571,57 @@ class _HomePageState extends State<HomePage> {
                               ),
                             ],
                           ),
-                        ),
-                      );
-                    },
-                  ),
+                        ],
+                      ),
                 ),
-                // Bill Summary Section
-                Container(
-                  margin: const EdgeInsets.all(16),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey[300]!),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Bill Summary',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Subtotal', style: TextStyle(fontSize: 14, color: Colors.grey)),
-                            Text(PriceUtils.formatPrice(_cartManager.subtotal, currency: _cartManager.displayCurrencySymbol), style: const TextStyle(fontSize: 14, color: Colors.grey)),
-                          ],
-                        ),
-                      ),
-                      if (_cartManager.totalDiscount > 0)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text('Discount', style: TextStyle(fontSize: 14, color: Colors.grey)),
-                              Text('-' + PriceUtils.formatPrice(_cartManager.totalDiscount, currency: _cartManager.displayCurrencySymbol), style: const TextStyle(fontSize: 14, color: Colors.green)),
-                            ],
-                          ),
-                        ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('GST (18%)', style: TextStyle(fontSize: 14, color: Colors.grey)),
-                            Text(PriceUtils.formatPrice(_cartManager.gstAmount, currency: _cartManager.displayCurrencySymbol), style: const TextStyle(fontSize: 14, color: Colors.grey)),
-                          ],
-                        ),
-                      ),
-                      const Divider(thickness: 1),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Total', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
-                            Text(PriceUtils.formatPrice(_cartManager.finalTotal, currency: _cartManager.displayCurrencySymbol), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Buy Now Button
-                Container(
-                  margin: const EdgeInsets.all(16),
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // Handle buy now action
-                      _handleBuyNow();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 4,
-                    ),
-                    child: const Text(
-                      'Buy Now',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            );
-        },
-      ),
-    );
+              ),
+            },
+          ),
+          if (response.statusCode == 200 && result['success'] == true) {
+            final data = json.decode(response.body);
+            if (data['success'] == true) {
+              final token = data['token']?.toString();
+              final user = data['user'];
+              final userId = (user is Map)
+                  ? (user['_id']?.toString() ?? user['id']?.toString())
+                  : null;
+              if (token != null && token.isNotEmpty && userId != null && userId.isNotEmpty) {
+                await SessionManager.bindAuth(userId: userId, token: token);
+              }
+              if (mounted) {
+                setState(() => _isLoading = false);
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const HomePage()),
+                );
+              }
+            } else {
+              throw Exception(data['error'] ?? 'Sign in failed');
+            }
+          } else {
+            final error = json.decode(response.body);
+            throw Exception(error['error'] ?? 'Invalid credentials');
+          }
+        }
+      } catch (e) {
+        setState(() => _isLoading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Sign in failed: \${e.toString().replaceAll("Exception: ", "")}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 
   void _handleBuyNow() {
-     // Implement buy now logic (e.g., navigate to checkout, show payment dialog)
-     ScaffoldMessenger.of(context).showSnackBar(
-       const SnackBar(content: Text('Proceeding to Checkout...')),
-     );
+    // Implement buy now logic (e.g., navigate to checkout, show payment dialog)
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Proceeding to Checkout...')),
+    );
   }
 
   Widget _buildWishlistPage() {
@@ -2756,8 +2706,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                 );
               },
-            ),
-    );
+            );
   }
 
   Widget _buildProfilePage() {
@@ -2769,7 +2718,8 @@ class _HomePageState extends State<HomePage> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          children: [            Center(
+          children: [
+            Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -2838,10 +2788,10 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ],
               ),
-            ),          ],
+            ),
+          ],
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildBottomNavigationBar() {
