@@ -6,7 +6,7 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'config/environment.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:flutter/src/material/carousel.dart' as material;
+// import 'package:flutter/src/material/carousel.dart' as material;
 
 // Define PriceUtils class
 class PriceUtils {
