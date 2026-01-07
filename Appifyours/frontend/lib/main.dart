@@ -50,7 +50,7 @@ class PriceUtils {
       case 'RUB': return '₽';
       case 'NGN': return '₦';
       case 'PKR': return '₨';
-      default: return '$';
+      default: return '\$';
     }
   }
 }
@@ -2931,3 +2931,4 @@ class _HomePageState extends State<HomePage> {
       ],
     );
   }
+    }
