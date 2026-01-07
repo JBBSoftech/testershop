@@ -91,6 +91,10 @@ class CartManager extends ChangeNotifier {
     if (_items.isEmpty) return '$';
     return _items.first.currencySymbol;
   }
+    // Add missing getters
+  double get totalQuantity {
+    return _items.fold(0, (sum, item) => sum + item.quantity);
+  }
   
   // Update GST percentage
   void updateGSTPercentage(double percentage) {
