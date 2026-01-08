@@ -2,29 +2,25 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'dart:async';
 import 'package:http/http.dart' as http;
-import 'package:socket_io_client/socket_io_client.dart' as IO;
-// import 'dart:html' as html;
-// import 'dart:js' as js;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'config/environment.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-// import 'package:flutter/src/material/carousel.dart' as material;
 
 // Define PriceUtils class
 class PriceUtils {
   static String formatPrice(double price, {String currency = '\$'}) {
     return '$currency\${price.toStringAsFixed(2)}';
   }
-  
+
   // Extract numeric value from price string with any currency symbol
   static double parsePrice(String priceString) {
     if (priceString.isEmpty) return 0.0;
     // Remove all currency symbols and non-numeric characters except decimal point
-    String numericString = priceString.replaceAll(RegExp(r'[^d.]'), '');
+    String numericString = priceString.replaceAll(RegExp(r'[^\d.]'), '');
     return double.tryParse(numericString) ?? 0.0;
   }
-  
+
   // Detect currency symbol from price string
   static String detectCurrency(String priceString) {
     if (priceString.contains('₹')) return '₹';
@@ -38,14 +34,15 @@ class PriceUtils {
     if (priceString.contains('₨')) return '₨';
     return '\$'; // Default to dollar
   }
-  
-   static String currencySymbolFromCode(String code) {
+
+  static String currencySymbolFromCode(String code) {
     switch (code.toUpperCase()) {
       case 'INR': return '₹';
       case 'USD': return '\$';
       case 'EUR': return '€';
       case 'GBP': return '£';
-      case 'JPY': case 'CNY': return '¥';
+      case 'JPY':
+      case 'CNY': return '¥';
       case 'KRW': return '₩';
       case 'RUB': return '₽';
       case 'NGN': return '₦';
@@ -54,24 +51,22 @@ class PriceUtils {
     }
   }
 
-
   static double calculateDiscountPrice(double originalPrice, double discountPercentage) {
     return originalPrice * (1 - discountPercentage / 100);
   }
-  
+
   static double calculateTotal(List<double> prices) {
     return prices.fold(0.0, (sum, price) => sum + price);
   }
-  
+
   static double calculateTax(double subtotal, double taxRate) {
     return subtotal * (taxRate / 100);
   }
-  
+
   static double applyShipping(double total, double shippingFee, {double freeShippingThreshold = 100.0}) {
     return total >= freeShippingThreshold ? total : total + shippingFee;
   }
 }
-  
 
 // Cart item model
 class CartItem {
@@ -82,7 +77,7 @@ class CartItem {
   int quantity;
   final String? image;
   final String currencySymbol;
-  
+
   CartItem({
     required this.id,
     required this.name,
@@ -92,7 +87,7 @@ class CartItem {
     this.image,
     this.currencySymbol = '\$',
   });
-  
+
   double get effectivePrice => discountPrice > 0 ? discountPrice : price;
   double get totalPrice => effectivePrice * quantity;
 }
@@ -102,36 +97,37 @@ class CartManager extends ChangeNotifier {
   final List<CartItem> _items = [];
   double _gstPercentage = 18.0; // Default GST percentage
   double _discountPercentage = 0.0; // Default discount percentage
-  
+
   List<CartItem> get items => List.unmodifiable(_items);
 
-   String get displayCurrencySymbol {
+  String get displayCurrencySymbol {
     if (_items.isEmpty) return '\$';
     return _items.first.currencySymbol;
   }
-    // Add missing getters
+  
+  // Add missing getters
   double get totalQuantity {
     return _items.fold(0, (sum, item) => sum + item.quantity);
   }
-  
+
   // Update GST percentage
   void updateGSTPercentage(double percentage) {
     _gstPercentage = percentage;
     notifyListeners();
   }
-  
+
   // Update discount percentage
   void updateDiscountPercentage(double percentage) {
     _discountPercentage = percentage;
     notifyListeners();
   }
-  
+
   // Get GST percentage
   double get gstPercentage => _gstPercentage;
-  
+
   // Get discount percentage
   double get discountPercentage => _discountPercentage;
-  
+
   void addItem(CartItem item) {
     final existingIndex = _items.indexWhere((i) => i.id == item.id);
     if (existingIndex >= 0) {
@@ -141,49 +137,49 @@ class CartManager extends ChangeNotifier {
     }
     notifyListeners();
   }
-  
+
   void removeItem(String id) {
     _items.removeWhere((item) => item.id == id);
     notifyListeners();
   }
-  
+
   void updateQuantity(String id, int quantity) {
     final item = _items.firstWhere((i) => i.id == id);
     item.quantity = quantity;
     notifyListeners();
   }
-  
+
   void clearCart() {
     clear(); // Reuse existing clear method
   }
-  
+
   void clear() {
     _items.clear();
     notifyListeners();
   }
-  
+
   double get subtotal {
     return _items.fold(0.0, (sum, item) => sum + item.totalPrice);
   }
-  
+
   double get totalWithTax {
     final tax = PriceUtils.calculateTax(subtotal, 8.0); // 8% tax
     return subtotal + tax;
   }
-  
+
   double get totalDiscount {
-    return _items.fold(0.0, (sum, item) => 
-      sum + ((item.price - item.effectivePrice) * item.quantity));
+    return _items.fold(0.0, (sum, item) =>
+        sum + ((item.price - item.effectivePrice) * item.quantity));
   }
-  
+
   double get gstAmount {
     return PriceUtils.calculateTax(subtotal, _gstPercentage); // Dynamic GST percentage
   }
-  
+
   double get finalTotal {
     return subtotal + gstAmount;
   }
-  
+
   double get finalTotalWithShipping {
     return PriceUtils.applyShipping(totalWithTax, 5.99); // $5.99 shipping
   }
@@ -197,7 +193,7 @@ class WishlistItem {
   final double discountPrice;
   final String? image;
   final String currencySymbol;
-  
+
   WishlistItem({
     required this.id,
     required this.name,
@@ -206,7 +202,7 @@ class WishlistItem {
     this.image,
     this.currencySymbol = '\$',
   });
-  
+
   double get effectivePrice => discountPrice > 0 ? discountPrice : price;
 }
 
@@ -217,30 +213,30 @@ class WishlistManager extends ChangeNotifier {
   }
 
   final List<WishlistItem> _items = [];
-  
+
   List<WishlistItem> get items => List.unmodifiable(_items);
-  
+
   void addItem(WishlistItem item) {
     if (!_items.any((i) => i.id == item.id)) {
       _items.add(item);
       notifyListeners();
     }
   }
-  
+
   void removeItem(String id) {
     _items.removeWhere((item) => item.id == id);
     notifyListeners();
   }
-  
+
   void clearCart() {
     clear(); // Reuse existing clear method
   }
-  
+
   void clear() {
     _items.clear();
     notifyListeners();
   }
-  
+
   bool isInWishlist(String id) {
     return _items.any((item) => item.id == id);
   }
@@ -335,7 +331,7 @@ class SessionManager {
 // Dynamic Admin ID Detection
 class AdminManager {
   static String? _currentAdminId;
-  
+
   static Future<String> getCurrentAdminId() async {
     if (_currentAdminId != null) return _currentAdminId!;
 
@@ -350,7 +346,7 @@ class AdminManager {
     print('✅ Admin ID locked: $adminId');
     return adminId;
   }
-  
+
   // Auto-detect admin ID from backend
   static Future<String?> _autoDetectAdminId() async {
     try {
@@ -358,7 +354,7 @@ class AdminManager {
         Uri.parse('${Environment.apiBase}/api/admin/app-info'),
         headers: {'Content-Type': 'application/json'},
       );
-      
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true && data['data'] != null) {
@@ -374,7 +370,7 @@ class AdminManager {
     }
     return null;
   }
-  
+
   // Method to set admin ID dynamically
   static Future<void> setAdminId(String adminId) async {
     throw UnsupportedError('Admin ID is immutable in generated apps');
@@ -408,7 +404,7 @@ class _SplashScreenState extends State<SplashScreen> {
       final response = await http.get(
         Uri.parse('${Environment.apiBase}/api/admin/splash?adminId=${adminId}&appId=${ApiConfig.appId}'),
       );
-      
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (mounted) {
@@ -436,9 +432,9 @@ class _SplashScreenState extends State<SplashScreen> {
         });
       }
     }
-    
+
     await Future.delayed(const Duration(seconds: 3));
-    
+
     if (mounted) {
       Navigator.pushReplacement(
         context,
@@ -539,7 +535,7 @@ class _SignInPageState extends State<SignInPage> {
           'appId': ApiConfig.appId,
         }),
       );
-      
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true) {
@@ -837,77 +833,76 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
-              TextField(
-                controller: _firstNameController,
-                decoration: const InputDecoration(
-                  labelText: 'First Name',
-                  prefixIcon: Icon(Icons.person),
-                ),
-                textCapitalization: TextCapitalization.words,
+            TextField(
+              controller: _firstNameController,
+              decoration: const InputDecoration(
+                labelText: 'First Name',
+                prefixIcon: Icon(Icons.person),
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _lastNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Last Name',
-                  prefixIcon: Icon(Icons.person_outline),
-                ),
-                textCapitalization: TextCapitalization.words,
+              textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _lastNameController,
+              decoration: const InputDecoration(
+                labelText: 'Last Name',
+                prefixIcon: Icon(Icons.person_outline),
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _phoneController,
-                decoration: const InputDecoration(
-                  labelText: 'Phone Number',
-                  prefixIcon: Icon(Icons.phone),
-                  hintText: '10 digit number',
-                ),
-                keyboardType: TextInputType.phone,
-                maxLength: 10,
+              textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _phoneController,
+              decoration: const InputDecoration(
+                labelText: 'Phone Number',
+                prefixIcon: Icon(Icons.phone),
+                hintText: '10 digit number',
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email ID',
-                  prefixIcon: Icon(Icons.email),
-                ),
-                keyboardType: TextInputType.emailAddress,
+              keyboardType: TextInputType.phone,
+              maxLength: 10,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _emailController,
+              decoration: const InputDecoration(
+                labelText: 'Email ID',
+                prefixIcon: Icon(Icons.email),
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  prefixIcon: const Icon(Icons.lock),
-                  suffixIcon: IconButton(
-                    icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                  ),
+              keyboardType: TextInputType.emailAddress,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _passwordController,
+              decoration: InputDecoration(
+                labelText: 'Password',
+                prefixIcon: const Icon(Icons.lock),
+                suffixIcon: IconButton(
+                  icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                 ),
-                obscureText: _obscurePassword,
               ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _createAccount,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text('Create Account', style: TextStyle(fontSize: 16)),
+              obscureText: _obscurePassword,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: _isLoading ? null : _createAccount,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-            ],
-          ),
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text('Create Account', style: TextStyle(fontSize: 16)),
+            ),
+          ],
         ),
       ),
     );
@@ -936,23 +931,22 @@ class _HomePageState extends State<HomePage> {
   Map<String, dynamic> _dynamicStoreInfo = {};
   Map<String, dynamic> _dynamicDesignSettings = {};
   Map<String, int> _productQuantities = {};
-  final DynamicAppSync _appSync = DynamicAppSync();
-  StreamSubscription? _updateSubscription;
+
+  // DynamicAppSync removed - Real-time updates removed
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: 0);
-    _dynamicProductCards = List.from(productCards); // Fallback to static data
+    // _dynamicProductCards initialization removed reliance on undefined 'productCards'
+    _dynamicProductCards = [];
     _filteredProducts = List.from(_dynamicProductCards);
     _loadDynamicData();
-    startRealTimeUpdates();
+    // startRealTimeUpdates removed
   }
 
   @override
   void dispose() {
-    _updateSubscription?.cancel();
-    _appSync.dispose();
     _pageController.dispose();
     super.dispose();
   }
@@ -963,8 +957,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-
- void _handleBuyNow() {
+  void _handleBuyNow() {
     if (_cartManager.items.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Your cart is empty')),
@@ -972,7 +965,8 @@ class _HomePageState extends State<HomePage> {
       return;
     }
   }
-    @override
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
@@ -987,7 +981,6 @@ class _HomePageState extends State<HomePage> {
       bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
-  // Real-time updates removed - app updates dynamically via WebSocket
 
   Future<void> _loadDynamicData() async {
     setState(() => _isLoading = true);
@@ -1003,7 +996,7 @@ class _HomePageState extends State<HomePage> {
       // Get dynamic admin ID
       final adminId = await AdminManager.getCurrentAdminId();
       print('🔍 Home page using admin ID: ${adminId}');
-      
+
       final response = await http.get(
         Uri.parse('${Environment.apiBase}/api/get-form?adminId=${adminId}&appId=${ApiConfig.appId}'),
         headers: {'Content-Type': 'application/json'},
@@ -1031,7 +1024,7 @@ class _HomePageState extends State<HomePage> {
               }
             }
           }
-          
+
           // Sort widgets to ensure HeaderWidget appears first
           extractedWidgets.sort((a, b) {
             bool aIsHeader = a['name'] == 'HeaderWidget';
@@ -1047,7 +1040,7 @@ class _HomePageState extends State<HomePage> {
               : <String, dynamic>{};
 
           setState(() {
-            _dynamicProductCards = extractedProducts.isNotEmpty ? extractedProducts : productCards;
+            _dynamicProductCards = extractedProducts.isNotEmpty ? extractedProducts : [];
             _filterProducts(_searchQuery); // Re-apply current filter
             _homeWidgets = extractedWidgets;
             _dynamicStoreInfo = storeInfo;
@@ -1120,20 +1113,6 @@ class _HomePageState extends State<HomePage> {
     return PriceUtils.detectCurrency((product['price'] ?? '').toString());
   }
 
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    body: IndexedStack(
-      index: _currentPageIndex,
-      children: [
-        _buildHomePage(),
-        _buildCartPage(),
-        _buildWishlistPage(),
-        _buildProfilePage(),
-      ],
-    ),
-    bottomNavigationBar: _buildBottomNavigationBar(),
-  );
-
   Widget _buildHomePage() {
     if (_isLoading) {
       return const Center(
@@ -1154,15 +1133,15 @@ class _HomePageState extends State<HomePage> {
         physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
           children: (
-            _homeWidgets.isNotEmpty
-                ? _homeWidgets.map((w) => _buildHomeWidgetFromConfig(w)).toList()
-                : <Widget>[
-                    _buildHomeWidgetFromConfig({'name': 'HeaderWidget', 'properties': {}}),
-                    _buildHomeWidgetFromConfig({'name': 'HeroBannerWidget', 'properties': {}}),
-                    _buildHomeWidgetFromConfig({'name': 'ProductSearchBarWidget', 'properties': {}}),
-                    _buildHomeWidgetFromConfig({'name': 'Catalog View Card', 'properties': {}}),
-                    _buildHomeWidgetFromConfig({'name': 'StoreInfoWidget', 'properties': {}}),
-                  ]
+              _homeWidgets.isNotEmpty
+                  ? _homeWidgets.map((w) => _buildHomeWidgetFromConfig(w)).toList()
+                  : <Widget>[
+                      _buildHomeWidgetFromConfig({'name': 'HeaderWidget', 'properties': {}}),
+                      _buildHomeWidgetFromConfig({'name': 'HeroBannerWidget', 'properties': {}}),
+                      _buildHomeWidgetFromConfig({'name': 'ProductSearchBarWidget', 'properties': {}}),
+                      _buildHomeWidgetFromConfig({'name': 'Catalog View Card', 'properties': {}}),
+                      _buildHomeWidgetFromConfig({'name': 'StoreInfoWidget', 'properties': {}}),
+                    ]
           ),
         ),
       ),
@@ -1202,8 +1181,8 @@ class _HomePageState extends State<HomePage> {
             ),
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             child: Row(
-              mainAxisAlignment: textAlign == 'center' ? MainAxisAlignment.center : 
-                           textAlign == 'right' ? MainAxisAlignment.end : MainAxisAlignment.start,
+              mainAxisAlignment: textAlign == 'center' ? MainAxisAlignment.center :
+              textAlign == 'right' ? MainAxisAlignment.end : MainAxisAlignment.start,
               children: [
                 if (textAlign != 'right')
                   (logoAsset.isNotEmpty
@@ -1224,8 +1203,8 @@ class _HomePageState extends State<HomePage> {
                 if (textAlign != 'right') const SizedBox(width: 6),
                 Text(
                   appName,
-                  textAlign: textAlign == 'center' ? TextAlign.center : 
-                           textAlign == 'right' ? TextAlign.right : TextAlign.left,
+                  textAlign: textAlign == 'center' ? TextAlign.center :
+                  textAlign == 'right' ? TextAlign.right : TextAlign.left,
                   style: TextStyle(
                     color: textColor,
                     fontWeight: fontWeight,
@@ -1331,17 +1310,17 @@ class _HomePageState extends State<HomePage> {
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     mainAxisAlignment: alignment == 'top' ? MainAxisAlignment.start :
-                                      alignment == 'bottom' ? MainAxisAlignment.end :
-                                      MainAxisAlignment.center,
+                    alignment == 'bottom' ? MainAxisAlignment.end :
+                    MainAxisAlignment.center,
                     crossAxisAlignment: textAlign == 'left' ? CrossAxisAlignment.start :
-                                    textAlign == 'right' ? CrossAxisAlignment.end :
-                                    TextAlign.center,
+                    textAlign == 'right' ? CrossAxisAlignment.end :
+                    CrossAxisAlignment.center, // Fixed: was TextAlign.center
                     children: [
                       Text(
                         title,
                         textAlign: textAlign == 'left' ? TextAlign.left :
-                                  textAlign == 'right' ? TextAlign.right :
-                                  TextAlign.center,
+                        textAlign == 'right' ? TextAlign.right :
+                        TextAlign.center,
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
@@ -1353,8 +1332,8 @@ class _HomePageState extends State<HomePage> {
                         Text(
                           subtitle,
                           textAlign: textAlign == 'left' ? TextAlign.left :
-                                    textAlign == 'right' ? TextAlign.right :
-                                    TextAlign.center,
+                          textAlign == 'right' ? TextAlign.right :
+                          TextAlign.center,
                           style: TextStyle(
                             fontSize: 16,
                             color: subtitleColor,
@@ -1588,10 +1567,10 @@ class _HomePageState extends State<HomePage> {
         final autoPlayInterval = int.tryParse(props['autoPlayInterval']?.toString() ?? '3') ?? 3;
         final showIndicators = props['showIndicators'] ?? true;
         final enableInfiniteScroll = true;
-        
+
         // Use dynamic slider images from API like web preview
         List<Map<String, dynamic>> sliderImages = [];
-        
+
         // Find ImageSliderWidget in dynamic home widgets and extract sliderImages
         if (_homeWidgets.isNotEmpty) {
           for (var widget in _homeWidgets) {
@@ -1604,7 +1583,7 @@ class _HomePageState extends State<HomePage> {
             }
           }
         }
-        
+
         // Fallback to static props if no dynamic images found
         if (sliderImages.isEmpty && props['sliderImages'] != null) {
           sliderImages = List<Map<String, dynamic>>.from(props['sliderImages']);
@@ -1828,7 +1807,6 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-        );
 
       default:
         return const SizedBox.shrink();
@@ -1850,7 +1828,7 @@ class _HomePageState extends State<HomePage> {
           // Extract store info from the response
           final storeInfo = data['storeInfo'] ?? {};
           final designSettings = data['designSettings'] ?? {};
-          
+
           return {
             'storeName': data['shopName'] ?? storeInfo['storeName'] ?? 'My Store',
             'address': storeInfo['address'] ?? '123 Main St',
@@ -1865,7 +1843,7 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       print('Error loading store data: 2.718281828459045');
     }
-    
+
     // Return default values if API fails
     return {
       'storeName': 'My Store',
@@ -1932,23 +1910,23 @@ class _HomePageState extends State<HomePage> {
         if (data['success'] == true && data['widgets'] != null) {
           // Extract product data from widgets
           List<Map<String, dynamic>> products = [];
-          
+
           for (var widget in data['widgets']) {
-            if (widget['name'] == 'ProductGridWidget' || 
+            if (widget['name'] == 'ProductGridWidget' ||
                 widget['name'] == 'Catalog View Card' ||
                 widget['name'] == 'Product Detail Card') {
               final productCards = widget['properties']?['productCards'] ?? [];
               products.addAll(List<Map<String, dynamic>>.from(productCards));
             }
           }
-          
+
           return products;
         }
       }
     } catch (e) {
       print('Error loading products: 2.718281828459045');
     }
-    
+
     return [];
   }
 
@@ -1987,13 +1965,13 @@ class _HomePageState extends State<HomePage> {
   Widget _buildProductCard(Map<String, dynamic> product, int index) {
     final String productId = 'product_' + index.toString();
     final String productName = product['productName'] ?? product['name'] ?? 'Product';
-    
+
     // Try multiple possible price field names
     final String? priceField1 = product['price']?.toString();
     final String? priceField2 = product['basePrice']?.toString();
     final String? priceField3 = product['currentPrice']?.toString();
     final String? priceField4 = product['productPrice']?.toString();
-    
+
     final String rawPrice = priceField1 ?? priceField2 ?? priceField3 ?? priceField4 ?? '99.99';
     final double basePrice = PriceUtils.parsePrice(rawPrice);
     final String currencySymbol = _currencySymbolForProduct(product);
@@ -2015,7 +1993,7 @@ class _HomePageState extends State<HomePage> {
     } else {
       discountLabel = 'OFFER';
     }
-    
+
     final String stockLabel;
     if (isSoldOut) {
       stockLabel = 'SOLD OUT';
@@ -2183,7 +2161,7 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                 );
                               }
-                              return SizedBox.shrink();
+                              return const SizedBox.shrink();
                             },
                           ),
                         const SizedBox(height: 4),
@@ -2220,9 +2198,9 @@ class _HomePageState extends State<HomePage> {
   // Helper method to convert hex color to Color
   Color _colorFromHex(String? hexColor) {
     if (hexColor == null || hexColor.isEmpty) return Colors.blue;
-    
+
     String localFormattedColor = hexColor.toUpperCase().replaceAll('#', '');
-    
+
     if (localFormattedColor.length == 6) {
       localFormattedColor = 'FF' + localFormattedColor;
     } else if (localFormattedColor.length == 8) {
@@ -2230,7 +2208,7 @@ class _HomePageState extends State<HomePage> {
     } else {
       return Colors.blue;
     }
-    
+
     try {
       return Color(int.parse('0x' + localFormattedColor));
     } catch (e) {
@@ -2259,246 +2237,246 @@ class _HomePageState extends State<HomePage> {
                     ],
                   ),
                 )
-          : Column(
-              children: [
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: _cartManager.items.length,
-                    itemBuilder: (context, index) {
-                      final item = _cartManager.items[index];
-                      return Card(
-                        margin: const EdgeInsets.all(8),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 60,
-                                height: 60,
-                                color: Colors.grey[300],
-                                child: item.image != null && item.image!.isNotEmpty
-                                    ? (item.image!.startsWith('data:image/')
-                                    ? Image.memory(
-                                  base64Decode(item.image!.split(',')[1]),
-                                  width: 60,
-                                  height: 60,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.image),
-                                )
-                                    : Image.network(
-                                  item.image!,
-                                  width: 60,
-                                  height: 60,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.image),
-                                ))
-                                    : const Icon(Icons.image),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded( 
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                    // Show current price (effective price)
-                                    Text(
-                                      PriceUtils.formatPrice(item.effectivePrice),
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.blue,
-                                      ),
+              : Column(
+                  children: [
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: _cartManager.items.length,
+                        itemBuilder: (context, index) {
+                          final item = _cartManager.items[index];
+                          return Card(
+                            margin: const EdgeInsets.all(8),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 60,
+                                    height: 60,
+                                    color: Colors.grey[300],
+                                    child: item.image != null && item.image!.isNotEmpty
+                                        ? (item.image!.startsWith('data:image/')
+                                            ? Image.memory(
+                                                base64Decode(item.image!.split(',')[1]),
+                                                width: 60,
+                                                height: 60,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (context, error, stackTrace) => const Icon(Icons.image),
+                                              )
+                                            : Image.network(
+                                                item.image!,
+                                                width: 60,
+                                                height: 60,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (context, error, stackTrace) => const Icon(Icons.image),
+                                              ))
+                                        : const Icon(Icons.image),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                        // Show current price (effective price)
+                                        Text(
+                                          PriceUtils.formatPrice(item.effectivePrice),
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.blue,
+                                          ),
+                                        ),
+                                        // Show original price if there's a discount
+                                        if (item.discountPrice > 0 && item.price != item.discountPrice)
+                                          Text(
+                                            PriceUtils.formatPrice(item.price),
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              decoration: TextDecoration.lineThrough,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
+                                      ],
                                     ),
-                                    // Show original price if there's a discount
-                                    if (item.discountPrice > 0 && item.price != item.discountPrice)
-                                      Text(
-                                        PriceUtils.formatPrice(item.price),
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          decoration: TextDecoration.lineThrough,
-                                          color: Colors.grey.shade600,
+                                  ),
+                                  // Quantity controls for all users
+                                  Row(
+                                    children: [
+                                      // Decrease button
+                                      GestureDetector(
+                                        onTap: () {
+                                          if (item.quantity > 1) {
+                                            _cartManager.updateQuantity(item.id, item.quantity - 1);
+                                          } else {
+                                            // Remove item if quantity is 1 and user clicks -
+                                            _cartManager.removeItem(item.id);
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text('Item removed from cart')),
+                                            );
+                                          }
+                                        },
+                                        child: Container(
+                                          width: 32,
+                                          height: 32,
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey.shade200,
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: const Icon(
+                                            Icons.remove,
+                                            size: 16,
+                                            color: Colors.black87,
+                                          ),
                                         ),
                                       ),
-                                  ],
-                                ),
-                              ),
-                              // Quantity controls for all users
-                              Row(
-                                children: [
-                                  // Decrease button
-                                  GestureDetector(
-                                    onTap: () {
-                                      if (item.quantity > 1) {
-                                        _cartManager.updateQuantity(item.id, item.quantity - 1);
-                                      } else {
-                                        // Remove item if quantity is 1 and user clicks -
-                                        _cartManager.removeItem(item.id);
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('Item removed from cart')),
-                                        );
-                                      }
-                                    },
-                                    child: Container(
-                                      width: 32,
-                                      height: 32,
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey.shade200,
-                                        borderRadius: BorderRadius.circular(4),
+                                      const SizedBox(width: 8),
+                                      // Quantity display
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                        decoration: BoxDecoration(
+                                          border: Border.all(color: Colors.grey.shade300),
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          item.quantity.toString(),
+                                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                                        ),
                                       ),
-                                      child: const Icon(
-                                        Icons.remove,
-                                        size: 16,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  // Quantity display
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.grey.shade300),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      item.quantity.toString(),
-                                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  // Increase button
-                                  GestureDetector(
-                                    onTap: () {
-                                      // Check if adding this item would exceed the 10 product limit
-                                      if (_cartManager.totalQuantity < 10) {
-                                        _cartManager.updateQuantity(item.id, item.quantity + 1);
-                                      } else {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Only have 10 products allowed'),
-                                            backgroundColor: Colors.orange,
+                                      const SizedBox(width: 8),
+                                      // Increase button
+                                      GestureDetector(
+                                        onTap: () {
+                                          // Check if adding this item would exceed the 10 product limit
+                                          if (_cartManager.totalQuantity < 10) {
+                                            _cartManager.updateQuantity(item.id, item.quantity + 1);
+                                          } else {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text('Only have 10 products allowed'),
+                                                backgroundColor: Colors.orange,
+                                              ),
+                                            );
+                                          }
+                                        },
+                                        child: Container(
+                                          width: 32,
+                                          height: 32,
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey.shade200,
+                                            borderRadius: BorderRadius.circular(4),
                                           ),
-                                        );
-                                      }
-                                    },
-                                    child: Container(
-                                      width: 32,
-                                      height: 32,
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey.shade200,
-                                        borderRadius: BorderRadius.circular(4),
+                                          child: const Icon(
+                                            Icons.add,
+                                            size: 16,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
                                       ),
-                                      child: const Icon(
-                                        Icons.add,
-                                        size: 16,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
+                                    ],
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                // Bill Summary Section
-                Container(
-                  margin: const EdgeInsets.all(16),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey[300]!),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Bill Summary',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
+                            ),
+                          );
+                        },
                       ),
-                      const SizedBox(height: 12),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Subtotal', style: TextStyle(fontSize: 14, color: Colors.grey)),
-                            Text(PriceUtils.formatPrice(_cartManager.subtotal, currency: _cartManager.displayCurrencySymbol), style: const TextStyle(fontSize: 14, color: Colors.grey)),
-                          ],
-                        ),
-                      ),
-                      if (_cartManager.totalDiscount > 0)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text('Discount', style: TextStyle(fontSize: 14, color: Colors.grey)),
-                              Text('-' + PriceUtils.formatPrice(_cartManager.totalDiscount, currency: _cartManager.displayCurrencySymbol), style: const TextStyle(fontSize: 14, color: Colors.green)),
-                            ],
-                          ),
-                        ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('GST (18%)', style: TextStyle(fontSize: 14, color: Colors.grey)),
-                            Text(PriceUtils.formatPrice(_cartManager.gstAmount, currency: _cartManager.displayCurrencySymbol), style: const TextStyle(fontSize: 14, color: Colors.grey)),
-                          ],
-                        ),
-                      ),
-                      const Divider(thickness: 1),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Total', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
-                            Text(PriceUtils.formatPrice(_cartManager.finalTotal, currency: _cartManager.displayCurrencySymbol), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Buy Now Button
-                Container(
-                  margin: const EdgeInsets.all(16),
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // Handle buy now action
-                      _handleBuyNow();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
+                    ),
+                    // Bill Summary Section
+                    Container(
+                      margin: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
                         borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[300]!),
                       ),
-                      elevation: 4,
-                    ),
-                    child: const Text(
-                      'Buy Now',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Bill Summary',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Subtotal', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                                Text(PriceUtils.formatPrice(_cartManager.subtotal, currency: _cartManager.displayCurrencySymbol), style: const TextStyle(fontSize: 14, color: Colors.grey)),
+                              ],
+                            ),
+                          ),
+                          if (_cartManager.totalDiscount > 0)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('Discount', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                                  Text('-' + PriceUtils.formatPrice(_cartManager.totalDiscount, currency: _cartManager.displayCurrencySymbol), style: const TextStyle(fontSize: 14, color: Colors.green)),
+                                ],
+                              ),
+                            ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('GST (18%)', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                                Text(PriceUtils.formatPrice(_cartManager.gstAmount, currency: _cartManager.displayCurrencySymbol), style: const TextStyle(fontSize: 14, color: Colors.grey)),
+                              ],
+                            ),
+                          ),
+                          const Divider(thickness: 1),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Total', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
+                                Text(PriceUtils.formatPrice(_cartManager.finalTotal, currency: _cartManager.displayCurrencySymbol), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                ),
-              ],
-            );
+                    // Buy Now Button
+                    Container(
+                      margin: const EdgeInsets.all(16),
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          // Handle buy now action
+                          _handleBuyNow();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 4,
+                        ),
+                        child: const Text(
+                          'Buy Now',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
         },
       ),
     );
@@ -2534,20 +2512,20 @@ class _HomePageState extends State<HomePage> {
                       color: Colors.grey[300],
                       child: item.image != null && item.image!.isNotEmpty
                           ? (item.image!.startsWith('data:image/')
-                          ? Image.memory(
-                        base64Decode(item.image!.split(',')[1]),
-                        width: 50,
-                        height: 50,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.image),
-                      )
-                          : Image.network(
-                        item.image!,
-                        width: 50,
-                        height: 50,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.image),
-                      ))
+                              ? Image.memory(
+                                  base64Decode(item.image!.split(',')[1]),
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.image),
+                                )
+                              : Image.network(
+                                  item.image!,
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.image),
+                                ))
                           : const Icon(Icons.image),
                     ),
                     title: Text(item.name),
@@ -2599,7 +2577,8 @@ class _HomePageState extends State<HomePage> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          children: [            Center(
+          children: [
+            Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -2628,10 +2607,10 @@ class _HomePageState extends State<HomePage> {
                       final userData = snapshot.data ?? {};
                       final firstName = userData['firstName'] ?? '';
                       final lastName = userData['lastName'] ?? '';
-                      final displayName = (firstName.isNotEmpty && lastName.isNotEmpty) 
+                      final displayName = (firstName.isNotEmpty && lastName.isNotEmpty)
                           ? '$firstName $lastName'
                           : (firstName.isNotEmpty ? firstName : (lastName.isNotEmpty ? lastName : 'User'));
-                      
+
                       return Text(
                         displayName,
                         style: const TextStyle(
@@ -2668,7 +2647,8 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ],
               ),
-            ),          ],
+            ),
+          ],
         ),
       ),
     );
@@ -2710,51 +2690,30 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Method to fetch user profile data
+  // Method to fetch user profile data - Implemented inline to fix ApiService error
   Future<Map<String, dynamic>> _fetchUserProfile() async {
     try {
-      final ApiService apiService = ApiService();
-      final userProfile = await apiService.getUserProfile();
-      return userProfile;
+      final response = await http.get(
+        Uri.parse('${Environment.apiBase}/api/user/profile'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${SessionManager.authToken}',
+        },
+      );
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
     } catch (e) {
-      print('Error fetching user profile: 2.718281828459045');
-      return {};
+      print('Error fetching user profile: $e');
     }
+    return {};
   }
-
 }
-  Widget _buildBottomNavigationBar() {
-    return BottomNavigationBar(
-      currentIndex: _currentPageIndex,
-      onTap: _onItemTapped,
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: Colors.blue,
-      unselectedItemColor: Colors.grey,
-      items: [
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Home',
-        ),
-        BottomNavigationBarItem(
-          icon: Badge(
-            label: Text('${_wishlistManager.items.length}'),
-            isLabelVisible: _wishlistManager.items.length > 0,
-            child: const Icon(Icons.favorite),
-          ),
-          label: 'Wishlist',
-        ),
-        BottomNavigationBarItem(
-          icon: Badge(
-            label: Text('${_cartManager.items.length}'),
-            isLabelVisible: _cartManager.items.length > 0,
-            child: const Icon(Icons.shopping_cart),
-          ),
-          label: 'Cart',
-        ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: 'Profile',
-        ),
-      ],
-    );
+
+// Dummy class to fix AuthHelper error
+class AuthHelper {
+  static Future<bool> isAdmin() async {
+    // Implement actual logic if needed, for now returns false
+    return false;
   }
+}
