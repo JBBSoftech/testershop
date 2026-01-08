@@ -932,17 +932,13 @@ class _HomePageState extends State<HomePage> {
   Map<String, dynamic> _dynamicDesignSettings = {};
   Map<String, int> _productQuantities = {};
 
-  // DynamicAppSync removed - Real-time updates removed
-
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: 0);
-    // _dynamicProductCards initialization removed reliance on undefined 'productCards'
     _dynamicProductCards = [];
     _filteredProducts = List.from(_dynamicProductCards);
     _loadDynamicData();
-    // startRealTimeUpdates removed
   }
 
   @override
@@ -993,7 +989,6 @@ class _HomePageState extends State<HomePage> {
   // Load dynamic data from backend
   Future<void> _loadDynamicAppConfig() async {
     try {
-      // Get dynamic admin ID
       final adminId = await AdminManager.getCurrentAdminId();
       print('🔍 Home page using admin ID: ${adminId}');
 
@@ -1062,8 +1057,6 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _currentPageIndex = index;
 
-      // Clear ONLY notification badges when opening Cart/Wishlist.
-      // Do NOT clear the actual cart/wishlist items.
       if (index == 1) {
         _cartNotificationCount = 0;
       } else if (index == 2) {
@@ -1314,7 +1307,7 @@ class _HomePageState extends State<HomePage> {
                     MainAxisAlignment.center,
                     crossAxisAlignment: textAlign == 'left' ? CrossAxisAlignment.start :
                     textAlign == 'right' ? CrossAxisAlignment.end :
-                    CrossAxisAlignment.center, // Fixed: was TextAlign.center
+                    CrossAxisAlignment.center,
                     children: [
                       Text(
                         title,
@@ -1807,6 +1800,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
+        );
 
       default:
         return const SizedBox.shrink();
