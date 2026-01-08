@@ -246,210 +246,6 @@ class WishlistManager extends ChangeNotifier {
   }
 }
 
-// Dynamic Configuration from Form
-final String gstNumber = '$gstNumber';
-final String selectedCategory = '$selectedCategory';
-final Map<String, dynamic> storeInfo = {
-  'storeName': '${storeInfo['storeName'] ?? 'My Store'}',
-  'address': '${storeInfo['address'] ?? '123 Main St'}',
-  'email': '${storeInfo['email'] ?? 'support@example.com'}',
-  'phone': '${storeInfo['phone'] ?? '(123) 456-7890'}',
-};
-
-// Dynamic Product Data - Will be loaded from backend
-List<Map<String, dynamic>> productCards = [];
-bool isLoading = true;
-String? errorMessage;
-
-// Quantity tracking for products
-Map<String, int> _productQuantities = {};
-
-// WebSocket Real-time Sync Service
-class DynamicAppSync {
-  static final DynamicAppSync _instance = DynamicAppSync._internal();
-  factory DynamicAppSync() => _instance;
-  DynamicAppSync._internal();
-
-  IO.Socket? _socket;
-  final StreamController<Map<String, dynamic>> _updateController = 
-      StreamController<Map<String, dynamic>>.broadcast();
-  
-  bool _isConnected = false;
-  String? _adminId;
-
-  Stream<Map<String, dynamic>> get updates => _updateController.stream;
-  bool get isConnected => _isConnected;
-
-  void connect({String? adminId, required String apiBase}) {
-    if (_isConnected && _socket != null) return;
-
-    _adminId = adminId;
-    
-    try {
-      final options = {
-        'transports': ['websocket'],
-        'autoConnect': true,
-        'reconnection': true,
-        'reconnectionAttempts': 5,
-        'reconnectionDelay': 1000,
-        'timeout': 5000,
-      };
-
-      _socket = IO.io('$apiBase/real-time-updates', options);
-      _setupSocketListeners();
-      
-    } catch (e) {
-      print('DynamicAppSync: Error connecting: $e');
-    }
-  }
-
-  void _setupSocketListeners() {
-    if (_socket == null) return;
-
-    _socket!.onConnect((_) {
-      print('DynamicAppSync: Connected');
-      _isConnected = true;
-      
-      if (_adminId != null && _adminId!.isNotEmpty) {
-        _socket!.emit('join-admin-room', {'adminId': _adminId});
-      }
-    });
-
-    _socket!.onDisconnect((_) {
-      print('DynamicAppSync: Disconnected');
-      _isConnected = false;
-    });
-
-    _socket!.on('dynamic-update', (data) {
-      print('DynamicAppSync: Received update: $data');
-      if (!_updateController.isClosed) {
-        _updateController.add(Map<String, dynamic>.from(data));
-      }
-    });
-
-    _socket!.on('home-page', (data) {
-      _handleUpdate({'type': 'home-page', 'data': data});
-    });
-  }
-
-  void _handleUpdate(Map<String, dynamic> update) {
-    if (!_updateController.isClosed) {
-      _updateController.add(update);
-    }
-  }
-
-  void disconnect() {
-    if (_socket != null) {
-      _socket!.disconnect();
-      _socket = null;
-    }
-    _isConnected = false;
-  }
-
-  void dispose() {
-    disconnect();
-    if (!_updateController.isClosed) {
-      _updateController.close();
-    }
-  }
-}
-
-// Function to load dynamic product data from backend
-Future<void> loadDynamicProductData() async {
-  try {
-    setState(() {
-      isLoading = true;
-      errorMessage = null;
-    });
-    
-    // Get dynamic admin ID
-    final adminId = await AdminManager.getCurrentAdminId();
-    print('🔍 Loading dynamic data with admin ID: ${adminId}');
-    
-    final response = await http.get(
-      Uri.parse('${Environment.apiBase}/api/get-form?adminId=${adminId}&appId=${ApiConfig.appId}'),
-      headers: {'Content-Type': 'application/json'},
-    );
-    
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      if (data['success'] == true && data['pages'] != null) {
-        final pages = data['pages'] as List;
-        final newProducts = <Map<String, dynamic>>[];
-        
-        // Extract products from all widgets
-        for (var page in pages) {
-          if (page['widgets'] != null) {
-            for (var widget in page['widgets']) {
-              if (widget['properties'] != null && widget['properties']['productCards'] != null) {
-                final products = List<Map<String, dynamic>>.from(widget['properties']['productCards']);
-                newProducts.addAll(products);
-              }
-            }
-          }
-        }
-        
-        setState(() {
-          productCards = newProducts;
-          isLoading = false;
-        });
-        
-        print('✅ Loaded ${productCards.length} dynamic products');
-      } else {
-        throw Exception('Invalid response format');
-      }
-    } else {
-      throw Exception('HTTP ${response.statusCode}');
-    }
-  } catch (e) {
-    print('❌ Error loading dynamic data: $e');
-    setState(() {
-      errorMessage = e.toString();
-      isLoading = false;
-    });
-  }
-}
-
-// Real-time updates with WebSocket
-final DynamicAppSync _appSync = DynamicAppSync();
-StreamSubscription? _updateSubscription;
-
-void startRealTimeUpdates() async {
-  final adminId = await AdminManager.getCurrentAdminId();
-  if (adminId != null) {
-    _appSync.connect(adminId: adminId, apiBase: Environment.apiBase);
-    
-    _updateSubscription = _appSync.updates.listen((update) {
-      if (!mounted) return;
-      
-      final type = update['type']?.toString().toLowerCase();
-      print('📱 Received real-time update: $type');
-      
-      switch (type) {
-        case 'home-page':
-        case 'dynamic-update':
-          loadDynamicProductData();
-          break;
-      }
-    });
-  }
-}
-
-@override
-void initState() {
-  super.initState();
-  loadDynamicProductData();
-  startRealTimeUpdates();
-}
-
-@override
-void dispose() {
-  _updateSubscription?.cancel();
-  _appSync.dispose();
-  super.dispose();
-}
-
-
 void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
@@ -559,7 +355,7 @@ class AdminManager {
   static Future<String?> _autoDetectAdminId() async {
     try {
       final response = await http.get(
-        Uri.parse('http://10.27.148.227:5000/api/admin/app-info'),
+        Uri.parse('${Environment.apiBase}/api/admin/app-info'),
         headers: {'Content-Type': 'application/json'},
       );
       
@@ -734,7 +530,7 @@ class _SignInPageState extends State<SignInPage> {
     try {
       final adminId = await AdminManager.getCurrentAdminId();
       final response = await http.post(
-        Uri.parse('http://10.27.148.227:5000/api/login'),
+        Uri.parse('${Environment.apiBase}/api/login'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'email': _emailController.text.trim(),
@@ -1003,7 +799,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed: 2.718281828459045'),
+            content: Text('Failed: ${e.toString().replaceAll('Exception: ', '')}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -1123,50 +919,6 @@ class HomePage extends StatefulWidget {
 
   @override
   State<HomePage> createState() => _HomePageState();
-}
-
-// Add AuthHelper class (add before main function):
-class AuthHelper {
-  static Future<bool> isAdmin() async {
-    // Check if current user is admin
-    final currentUserId = SessionManager.currentUserId;
-    final adminUserId = SessionManager.adminUserId;
-    return currentUserId == adminUserId;
-  }
-}
-
-// Add ApiService class (add before main function):
-class ApiService {
-  Future<Map<String, dynamic>> getUserProfile() async {
-    try {
-      final userId = SessionManager.currentUserId;
-      final token = SessionManager.authToken;
-      
-      if (userId == null || token == null) {
-        throw Exception('Not authenticated');
-      }
-
-      final adminId = await AdminManager.getCurrentAdminId();
-      final response = await http.get(
-        Uri.parse('${Environment.apiBase}/api/user/profile?userId=${userId}&adminId=${adminId}'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${token}',
-        },
-      );
-      
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['success'] == true) {
-          return data['user'] ?? {};
-        }
-      }
-      return {};
-    } catch (e) {
-      print('Error fetching user profile: 2.718281828459045');
-      return {};
-    }
-  }
 }
 
 class _HomePageState extends State<HomePage> {
@@ -1583,7 +1335,7 @@ class _HomePageState extends State<HomePage> {
                                       MainAxisAlignment.center,
                     crossAxisAlignment: textAlign == 'left' ? CrossAxisAlignment.start :
                                     textAlign == 'right' ? CrossAxisAlignment.end :
-                                    CrossAxisAlignment.center,
+                                    TextAlign.center,
                     children: [
                       Text(
                         title,
@@ -2259,7 +2011,7 @@ class _HomePageState extends State<HomePage> {
     final bool isSoldOut = quantityAvailable <= 0;
     final String discountLabel;
     if (hasPercentDiscount) {
-      discountLabel = '0% OFF';
+      discountLabel = '${badgeDiscountPercent.toStringAsFixed(badgeDiscountPercent % 1 == 0 ? 0 : 1)}% OFF';
     } else {
       discountLabel = 'OFFER';
     }
@@ -2434,6 +2186,7 @@ class _HomePageState extends State<HomePage> {
                               return SizedBox.shrink();
                             },
                           ),
+                        const SizedBox(height: 4),
                       ],
                     ),
                     const SizedBox(height: 4),
