@@ -42,7 +42,7 @@ class PriceUtils {
    static String currencySymbolFromCode(String code) {
     switch (code.toUpperCase()) {
       case 'INR': return '₹';
-      case 'USD': return '$';
+      case 'USD': return '\$';
       case 'EUR': return '€';
       case 'GBP': return '£';
       case 'JPY': case 'CNY': return '¥';
@@ -53,7 +53,7 @@ class PriceUtils {
       default: return '\$';
     }
   }
-}
+
 
   static double calculateDiscountPrice(double originalPrice, double discountPercentage) {
     return originalPrice * (1 - discountPercentage / 100);
@@ -71,6 +71,7 @@ class PriceUtils {
     return total >= freeShippingThreshold ? total : total + shippingFee;
   }
 }
+  }
 
 // Cart item model
 class CartItem {
