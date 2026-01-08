@@ -105,7 +105,7 @@ class CartManager extends ChangeNotifier {
   List<CartItem> get items => List.unmodifiable(_items);
 
    String get displayCurrencySymbol {
-    if (_items.isEmpty) return '$';
+    if (_items.isEmpty) return '\$';
     return _items.first.currencySymbol;
   }
     // Add missing getters
@@ -1122,6 +1122,50 @@ class HomePage extends StatefulWidget {
 
   @override
   State<HomePage> createState() => _HomePageState();
+}
+
+// Add AuthHelper class (add before main function):
+class AuthHelper {
+  static Future<bool> isAdmin() async {
+    // Check if current user is admin
+    final currentUserId = SessionManager.currentUserId;
+    final adminUserId = SessionManager.adminUserId;
+    return currentUserId == adminUserId;
+  }
+}
+
+// Add ApiService class (add before main function):
+class ApiService {
+  Future<Map<String, dynamic>> getUserProfile() async {
+    try {
+      final userId = SessionManager.currentUserId;
+      final token = SessionManager.authToken;
+      
+      if (userId == null || token == null) {
+        throw Exception('Not authenticated');
+      }
+
+      final adminId = await AdminManager.getCurrentAdminId();
+      final response = await http.get(
+        Uri.parse('${Environment.apiBase}/api/user/profile?userId=${userId}&adminId=${adminId}'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${token}',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true) {
+          return data['user'] ?? {};
+        }
+      }
+      return {};
+    } catch (e) {
+      print('Error fetching user profile: 2.718281828459045');
+      return {};
+    }
+  }
 }
 
 class _HomePageState extends State<HomePage> {
