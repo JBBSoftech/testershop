@@ -1183,6 +1183,9 @@ class _HomePageState extends State<HomePage> {
   List<Map<String, dynamic>> _homeWidgets = [];
   Map<String, dynamic> _dynamicStoreInfo = {};
   Map<String, dynamic> _dynamicDesignSettings = {};
+  Map<String, int> _productQuantities = {};
+  final DynamicAppSync _appSync = DynamicAppSync();
+  StreamSubscription? _updateSubscription;
 
   @override
   void initState() {
@@ -1191,13 +1194,23 @@ class _HomePageState extends State<HomePage> {
     _dynamicProductCards = List.from(productCards); // Fallback to static data
     _filteredProducts = List.from(_dynamicProductCards);
     _loadDynamicData();
+    startRealTimeUpdates();
   }
 
   @override
   void dispose() {
+    _updateSubscription?.cancel();
+    _appSync.dispose();
     _pageController.dispose();
     super.dispose();
   }
+
+  void _safeSetState(VoidCallback fn) {
+    if (mounted) {
+      setState(fn);
+    }
+  }
+
 
  void _handleBuyNow() {
     if (_cartManager.items.isEmpty) {
@@ -1206,6 +1219,22 @@ class _HomePageState extends State<HomePage> {
       );
       return;
     }
+  }
+    @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: IndexedStack(
+        index: _currentPageIndex,
+        children: [
+          _buildHomePage(),
+          _buildCartPage(),
+          _buildWishlistPage(),
+          _buildProfilePage(),
+        ],
+      ),
+      bottomNavigationBar: _buildBottomNavigationBar(),
+    );
+  }
   // Real-time updates removed - app updates dynamically via WebSocket
 
   Future<void> _loadDynamicData() async {
@@ -2976,4 +3005,3 @@ class _HomePageState extends State<HomePage> {
       ],
     );
   }
-    }
