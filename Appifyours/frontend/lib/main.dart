@@ -71,7 +71,7 @@ class PriceUtils {
     return total >= freeShippingThreshold ? total : total + shippingFee;
   }
 }
-  }
+  
 
 // Cart item model
 class CartItem {
